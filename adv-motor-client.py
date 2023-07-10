@@ -63,21 +63,20 @@ running = True
 inplace_turn, switched = False, False
 coyote_time = 10
 cur_time = 0
+spd_dead_zone = 0.2
+x_dead_zone = 0.5
 while (running):
     response = requests.get("http://10.42.0.1:5000/controller")
     response = response.json()
     print(response)
-    x, y, xySpd = 0, 0, 0
-    
-    if (abs(response[0]) >= 0.5):
+    x, xySpd = 0, 0
+    if (abs(response[0]) >= x_dead_zone):
         x = response[0]
-    if (abs(response[1]) >= 0.5):
-        y = response[1]
-    if (response[3] >= 0.2): xySpd = -response[3]
+    if (response[3] >= spd_dead_zone): xySpd = -response[3]
     #forwarding overrides reverse trigger
-    if (response[2] >= 0.2): xySpd = response[2]
+    if (response[2] >= spd_dead_zone): xySpd = response[2]
     xySpd *= 100
-    print(xySpd, x, y)
+    print(xySpd, x)
     if (switched): cur_time += 1
     if (cur_time >= coyote_time): switched = False
     if (response[9] == 1 and not switched): 
