@@ -7,7 +7,7 @@ from inputs import get_gamepad
 import math
 import threading
 
-class XboxController(object):
+class GameController(object):
     MAX_TRIG_VAL = math.pow(2, 8)
     MAX_JOY_VAL = math.pow(2, 15)
 
@@ -39,7 +39,7 @@ class XboxController(object):
         self._monitor_thread.start()
 
 
-    def read(self): # return the buttons/triggers that you care about in this methode
+    def read(self): # return the buttons/triggers that you care about in this method
         lJoyStickX = self.LeftJoystickX
         rJoyStickY = self.LeftJoystickY
         lt = self.LeftTrigger / 4
@@ -98,7 +98,7 @@ class XboxController(object):
                 elif event.code == 'BTN_TRIGGER_HAPPY4':
                     self.DownDPad = event.state
 
-joy = XboxController()
+joy = GameController()
 
 app = Flask(__name__)
 

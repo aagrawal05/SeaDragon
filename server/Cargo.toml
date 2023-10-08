@@ -1,0 +1,9 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+futures-util = { version = "0.3.28", features = ["sink", "std"] }
+tokio = { version = "1.32.0", features = [ "full" ] } 
+tokio-tungstenite = "0.20.1"
