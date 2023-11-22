@@ -1,9 +1,5 @@
-# A flask server to send inputs from the xbox controller to the robot
-# The raspberry pi will be the client and the computer will be the server
-# The server will send the inputs to the robot via a socket connection on the ethernet port
-
-from flask import Flask, request, jsonify
-from inputs import get_gamepad
+from flask import Flask, jsonify
+import pyglet
 import math
 import threading
 
@@ -12,7 +8,6 @@ class GameController(object):
     MAX_JOY_VAL = math.pow(2, 15)
 
     def __init__(self):
-
         self.LeftJoystickY = 0
         self.LeftJoystickX = 0
         self.RightJoystickY = 0
@@ -34,76 +29,116 @@ class GameController(object):
         self.UpDPad = 0
         self.DownDPad = 0
 
-        self._monitor_thread = threading.Thread(target=self._monitor_controller, args=())
-        self._monitor_thread.daemon = True
-        self._monitor_thread.start()
-
+        # Initialize Pyglet Joystick
+        joysticks = pyglet.input.get_joysticks()
+        if joysticks:
+            self.joystick = joysticks[0]
+            self.joystick.open()
+            pyglet.input.Joystick
+            # Register event handlers
+            self.joystick.on_joybutton_press = self.on_joybutton_press
+            self.joystick.on_joybutton_release = self.on_joybutton_release
+            self.joystick.on_joyaxis_motion = self.on_joyaxis_motion
+        else:
+            print("No joystick/gamepad found.")
+            self.joystick = None
 
     def read(self): # return the buttons/triggers that you care about in this method
         lJoyStickX = self.LeftJoystickX
-        rJoyStickY = self.LeftJoystickY
-        lt = self.LeftTrigger / 4
-        rt = self.RightTrigger / 4
+        lJoyStickY = self.LeftJoystickY
+        lt = self.LeftTrigger
+        rt = self.RightTrigger
         lb = self.LeftBumper
         rb = self.RightBumper
         a = self.A
         b = self.B
         x = self.X
         y = self.Y
-        return [lJoyStickX, rJoyStickY, lt, rt, a, b, lb, rb, x, y]
+        return [lJoyStickX, lJoyStickY, lt, rt, a, b, lb, rb, x, y]
 
+    def on_joybutton_press(self, joystick, button):
+        # Handle button press event
+        print(f'button {button} pressed')
+        if str(button) == '0':
+            self.X = 1
+        elif str(button) == '2':
+            self.A = 1
+        elif str(button) == '3':
+            self.B = 1
+        elif str(button) == '4':
+            self.Y = 1
+        elif str(button) == '5':
+            self.LeftBumper = 1
+        elif str(button) == '6':
+            self.RightBumper = 1
+        elif str(button) == '7':
+            self.LeftTrigger = 1
+        elif str(button) == '8':
+            self.RightTrigger = 1
+        print(joystick,button)
+        pass
 
-    def _monitor_controller(self):
-        while True:
-            events = get_gamepad()
-            for event in events:
-                if event.code == 'ABS_Y':
-                    self.LeftJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
-                elif event.code == 'ABS_X':
-                    self.LeftJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
-                elif event.code == 'ABS_RY':
-                    self.RightJoystickY = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
-                elif event.code == 'ABS_RX':
-                    self.RightJoystickX = event.state / XboxController.MAX_JOY_VAL # normalize between -1 and 1
-                elif event.code == 'ABS_Z':
-                    self.LeftTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
-                elif event.code == 'ABS_RZ':
-                    self.RightTrigger = event.state / XboxController.MAX_TRIG_VAL # normalize between 0 and 1
-                elif event.code == 'BTN_TL':
-                    self.LeftBumper = event.state
-                elif event.code == 'BTN_TR':
-                    self.RightBumper = event.state
-                elif event.code == 'BTN_SOUTH':
-                    self.A = event.state
-                elif event.code == 'BTN_NORTH':
-                    self.X = event.state #previously switched with X
-                elif event.code == 'BTN_WEST':
-                    self.Y = event.state #previously switched with Y
-                elif event.code == 'BTN_EAST':
-                    self.B = event.state
-                elif event.code == 'BTN_THUMBL':
-                    self.LeftThumb = event.state
-                elif event.code == 'BTN_THUMBR':
-                    self.RightThumb = event.state
-                elif event.code == 'BTN_SELECT':
-                    self.Back = event.state
-                elif event.code == 'BTN_START':
-                    self.Start = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY1':
-                    self.LeftDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY2':
-                    self.RightDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY3':
-                    self.UpDPad = event.state
-                elif event.code == 'BTN_TRIGGER_HAPPY4':
-                    self.DownDPad = event.state
+    def on_joybutton_release(self, joystick, button):
+        # Handle button release events
+        print(f'button {button} pressed')
+        if str(button) == '0':
+            self.X = 0
+        elif str(button) == '2':
+            self.A = 0
+        elif str(button) == '3':
+            self.B = 0
+        elif str(button) == '4':
+            self.Y = 0
+        elif str(button) == '5':
+            self.LeftBumper = 0
+        elif str(button) == '6':
+            self.RightBumper = 0
+        elif str(button) == '7':
+            self.LeftTrigger = 0
+        elif str(button) == '8':
+            self.RightTrigger = 0
+        print("no button")
+        pass
 
-joy = GameController()
+    def on_joyaxis_motion(self, joystick, axis, value):
+        # Handle joystick movement events
+        if axis == 'y':
+            self.LeftJoystickY = value
+        elif axis == 'x':
+            self.LeftJoystickX = value
+        elif axis == 'rz':
+            self.RightJoystickY = value
+        elif axis == 'z':
+            self.RightJoystickX = value
+        # print(f"Joystick {axis} moved to {value} on {joystick}")
+        print("joystick")
+        pass
 
+# Flask app setup
 app = Flask(__name__)
 
 @app.route('/controller')
 def controller():
-    # Get the controller inputs
-    #print(joy.read())
+    print("HEILLO")
+    print(joy.LeftJoystickX)
     return jsonify(joy.read())
+
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "Server is running"})
+
+# Function to run Flask app
+def run_flask_app():
+    app.run(debug=True, port=5001, use_reloader=False)
+
+# Initialize GameController
+joy = GameController()
+
+# Run Flask app in a separate thread
+flask_thread = threading.Thread(target=run_flask_app)
+flask_thread.start()
+
+# Run the Pyglet app
+if __name__ == "__main__":
+    print("running app")
+    pyglet.app.run()
